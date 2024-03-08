@@ -1,0 +1,2 @@
+# ggs
+Generate Games Status
