@@ -1,13 +1,17 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
+
 	"github.com/manifoldco/promptui"
 )
 
 const statusFileName = "status.toml"
+
+var hiddenFilesIgnore bool = false
 
 const tomlHeader = `
 [NOT WORKING]
@@ -35,7 +39,7 @@ func overwriteStatusAsk() bool {
 }
 
 func writeStatus(fileName string) {
-	file, err := os.OpenFile(fileName, os.O_CREATE | os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fileName, os.O_CREATE | os.O_WRONLY | os.O_TRUNC, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,7 +56,7 @@ func writeStatus(fileName string) {
 		name := fileInfo.Name()
 
 		if name == statusFileName { continue }
-		if name[0] == '.' { continue }
+		if !hiddenFilesIgnore && name[0] == '.' { continue }
 
 		fmt.Println("Writing file in status:", name)
 		file.WriteString(name + "\n")
@@ -60,9 +64,13 @@ func writeStatus(fileName string) {
 }
 
 func main() {
+	hiddenFiles := flag.Bool("hidden", false, "Does not include hidden files in the status")
+	flag.Parse()
+
+	hiddenFilesIgnore = *hiddenFiles
+
 	if _, err := os.Stat(statusFileName); !os.IsNotExist(err) {
-		ok := overwriteStatusAsk()
-		if ok {
+		if overwriteStatusAsk() {
 			writeStatus(statusFileName)
 		}
 	} else {
